@@ -36,8 +36,6 @@ parser.add_argument('--gpu', type=str, default='2', help='GPU to use')
 
 ### costs
 parser.add_argument('--ema_decay', type=float, default=0.99, help='ema_decay')
-parser.add_argument('--kd_type', type=str, choices=['dice', 'ce', 'kl'], default="dice",
-                    help='loss type for loss_kd')
 parser.add_argument('--lam_kd', type=float, default=4, help='trade-off weight')
 parser.add_argument('--T', type=float, default=2, help='temperature')
 parser.add_argument('--consistency_rampup', type=float, default=40.0, help='consistency_rampup')
@@ -161,19 +159,7 @@ if __name__ == "__main__":
 
             supervised_loss = loss_seg_dice
 
-            # knowledge distillation loss type
-            if args.kd_type == 'kl':
-                loss_kd = F.kl_div(F.logsigmoid(outputs_1 / args.T), outputs_soft_2_dis, reduction='mean') + \
-                          F.kl_div(F.logsigmoid(outputs_2 / args.T), outputs_soft_1_dis, reduction='mean')
-
-            elif args.kd_type == 'ce':
-                loss_kd = (F.logsigmoid(outputs_1 / args.T) * outputs_soft_2_dis +
-                           F.logsigmoid(outputs_2 / args.T) * outputs_soft_1_dis).mean()
-
-            elif args.kd_type == 'dice':
-                loss_kd = losses.dice_loss(outputs_soft_1_dis, outputs_soft_2_dis)
-            else:
-                loss_kd = None
+            loss_kd = losses.dice_loss(outputs_soft_1_dis, outputs_soft_2_dis)
 
             outputs_1.requires_grad_(True)
             outputs_1.retain_grad()
